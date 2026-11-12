@@ -13,11 +13,15 @@ class Storage:
         self.source = None
         self.history = []
 
-    def save(self, quizzes, history):
+    def save(self, quizzes, history, best_score):
         data = {
             "quizzes": [q.to_dict() for q in quizzes],
             "history": history,
-        }  # object, not bare list. best score is DERIVED from history, not stored.
+            "best_score": best_score,
+            # best_score is a DERIVED mirror of history, recomputed and written on
+            # every save for schema compatibility. load() never reads it back --
+            # history is the single source of truth, so the two can never drift.
+        }  # object, not bare list
         try:
             # Write to a temp file, then atomically replace the real one. If the
             # process dies mid-write, state.json is never left half-written.

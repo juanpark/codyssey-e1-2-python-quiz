@@ -24,7 +24,7 @@ class QuizGame:
         self.quizzes = self.storage.load()
         self.history = self.storage.history
         self.startup_message = self._load_message()
-        self.storage.save(self.quizzes, self.history)
+        self._save()
 
     # ---- shared rendering helpers: keep every screen consistent ----
 
@@ -117,6 +117,12 @@ class QuizGame:
             return None
         return max(self.history, key=self._record_pct)
 
+    def _save(self):
+        """Persist state. best_score is derived from history here (write-only mirror)."""
+        best = self.best_run()
+        best_score = self._record_pct(best) if best else 0
+        self.storage.save(self.quizzes, self.history, best_score)
+
     def play(self):
         """Ask a chosen number of quizzes in random order, score, and record it."""
         if not self.quizzes:
@@ -171,7 +177,7 @@ class QuizGame:
         self.history.append(record)
         if prior_best is None or score > self._record_pct(prior_best):
             print("최고 점수 갱신!")
-        self.storage.save(self.quizzes, self.history)
+        self._save()
 
     def add_quiz(self):
         """Create a new Quiz from user input, append it, and save."""
@@ -181,7 +187,7 @@ class QuizGame:
         answer = read_int_in_range("정답 번호 (1-4): ", 1, 4)
         hint = input("힌트 (선택, Enter로 건너뛰기): ").strip() or None
         self.quizzes.append(Quiz(question, choices, answer, hint))
-        self.storage.save(self.quizzes, self.history)
+        self._save()
         print(f"\n추가 완료!  (현재 퀴즈 {len(self.quizzes)}개)")
 
     def delete_quiz(self):
@@ -198,7 +204,7 @@ class QuizGame:
             print("취소했습니다.")
             return
         removed = self.quizzes.pop(index - 1)
-        self.storage.save(self.quizzes, self.history)
+        self._save()
         print(f"\n삭제 완료: {removed.question}")
 
     def list_quizzes(self):

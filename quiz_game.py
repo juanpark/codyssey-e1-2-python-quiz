@@ -59,14 +59,14 @@ class QuizGame:
                     case 2:
                         print("todo")
                     case 3:
-                        print("todo")
+                        self.list_quizzes()
                     case 4:
                         self.show_score()
                     case 5:
                         print("퀴즈를 종료합니다...")
                         break
         except (KeyboardInterrupt, EOFError):
-            print("퀴즈를 종료합니다...")
+            print("\n퀴즈를 종료합니다...")
             return
 
     def _load_message(self):
@@ -77,10 +77,6 @@ class QuizGame:
                 return "처음 실행입니다. 기본 문제로 시작합니다."
             case "corrupt":
                 return "저장 파일이 손상되어 기본 문제로 시작합니다."
-
-    def show_score(self):
-        """Print the saved best score."""
-        print(f"최고 점수: {self.best_score:.1f}점")
 
     def play(self):
         if not self.quizzes:
@@ -118,7 +114,19 @@ class QuizGame:
         self.storage.save(self.quizzes, self.best_score)
 
     def show_score(self):
+        """Print the saved best score."""
         print(f"최고 점수: {self.best_score:.1f}점")
+
+    def list_quizzes(self):
+        if not self.quizzes:
+            print("등록된 퀴즈가 없습니다. 먼저 '퀴즈 추가'로 문제를 만들어 주세요.")
+            return
+        print(f"\n등록된 퀴즈 목록 (총 {len(self.quizzes)}개)\n")
+        print("=" * 50)
+        for number, quiz in enumerate(self.quizzes, start=1):
+            print(f"[{number}] {quiz.question}")
+        print("=" * 50)
+
 
 if __name__ == "__main__":
     QuizGame().run()

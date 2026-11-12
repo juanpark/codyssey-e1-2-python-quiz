@@ -1,6 +1,7 @@
 """QuizGame: orchestrates the game — owns the quizzes and runs the menu loop."""
 import time
 import unicodedata  # stdlib tool
+from datetime import datetime
 from input_utils import read_int_in_range
 from storage import Storage
 
@@ -16,9 +17,9 @@ class QuizGame:
     def __init__(self):
         self.storage = Storage()
         self.quizzes = self.storage.load()
-        self.best_score = self.storage.best_score
+        self.history = self.storage.history
         self.startup_message = self._load_message()
-        self.storage.save(self.quizzes, self.best_score)
+        self.storage.save(self.quizzes, self.history)
 
     def print_menu(self):
         boundary = "=" * 50
@@ -72,11 +73,26 @@ class QuizGame:
     def _load_message(self):
         match self.storage.source:
             case "file":
-                return f"저장된 데이터를 불러왔습니다. (퀴즈 {len(self.quizzes)}개, 최고점수 {self.best_score:.1f}점)"
+                best = self.best_run()
+                if best:
+                    return (f"저장된 데이터를 불러왔습니다. "
+                            f"(퀴즈 {len(self.quizzes)}개, 최고점수 {self._record_pct(best):.0f}점)")
+                return f"저장된 데이터를 불러왔습니다. (퀴즈 {len(self.quizzes)}개)"
             case "new":
                 return "처음 실행입니다. 기본 문제로 시작합니다."
             case "corrupt":
                 return "저장 파일이 손상되어 기본 문제로 시작합니다."
+
+    @staticmethod
+    def _record_pct(record):
+        """Percentage score of one history record. total defaults to 1 to avoid /0."""
+        return record.get("correct", 0) / record.get("total", 1) * 100
+
+    def best_run(self):
+        """The history record with the highest percentage, or None if no games yet."""
+        if not self.history:
+            return None
+        return max(self.history, key=self._record_pct)
 
     def play(self):
         if not self.quizzes:
@@ -107,15 +123,34 @@ class QuizGame:
         score = correct / total * 100
         print("=" * 50)
         print(f"결과: {total}문제 중 {correct}문제 정답! ({score:.1f}점)")
-        if score > self.best_score:
-            self.best_score = score
+
+        # record this game in history, then flag a new best (vs the PRIOR best)
+        prior_best = self.best_run()
+        self.history.append({
+            "datetime": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "correct": correct,
+            "total": total,
+        })
+        if prior_best is None or score > self._record_pct(prior_best):
             print("🎉 최고 점수 갱신!")
         print("=" * 50)
-        self.storage.save(self.quizzes, self.best_score)
+        self.storage.save(self.quizzes, self.history)
 
     def show_score(self):
-        """Print the saved best score."""
-        print(f"최고 점수: {self.best_score:.1f}점")
+        """Show the best run and recent game history (점수 기록)."""
+        best = self.best_run()
+        if best is None:
+            print("아직 플레이 기록이 없습니다. '퀴즈 풀기'로 첫 게임을 시작해 보세요.")
+            return
+        print(f"\n🏆 최고 점수: {self._record_pct(best):.0f}점 "
+              f"({best.get('total', 0)}문제 중 {best.get('correct', 0)}문제 정답)")
+        print("=" * 50)
+        print("최근 기록:")
+        for record in reversed(self.history[-5:]):  # last 5 games, newest first
+            print(f"  {record.get('datetime', '?')}  —  "
+                  f"{record.get('total', 0)}문제 중 {record.get('correct', 0)}문제 "
+                  f"({self._record_pct(record):.0f}점)")
+        print("=" * 50)
 
     def list_quizzes(self):
         if not self.quizzes:

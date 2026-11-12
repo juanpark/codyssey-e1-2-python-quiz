@@ -239,3 +239,5 @@ def _record_pct(record):            # 정확도 − 힌트 감점, 0점 하한
 - 브랜치 생성 + 병합 (feature 단위: quizgame · persistence · play · list · add · ux · delete · play-options · history · hints). 모든 병합은 `--no-ff`.
 - 병합은 **`--no-ff`** 로 — fast-forward면 직선으로 합쳐져 브랜치 흔적이 사라지므로, 머지 커밋을 강제해 `git log --graph`에 **분기·병합 경로가 보이게** 합니다.
 - `clone` + `pull` 실습: 게임 완성 후 2번째 폴더로 clone → README 수정 → push → 원본에서 pull.
+
+_clone/pull 실습으로 추가된 줄 (2026-11-13).

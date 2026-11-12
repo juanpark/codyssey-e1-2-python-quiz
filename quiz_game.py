@@ -1,7 +1,7 @@
 """QuizGame: orchestrates the game — owns the quizzes and runs the menu loop."""
 import unicodedata  # stdlib tool
 from input_utils import read_int_in_range
-from default_data import default_quizzes
+from storage import Storage
 
 
 def display_width(text: str) -> int:
@@ -13,7 +13,10 @@ class QuizGame:
     """orchestrates the game, owns the quizzes, runs the menu loop"""
 
     def __init__(self):
-        self.quizzes = default_quizzes()
+        self.storage = Storage()
+        self.quizzes = self.storage.load()
+        self.startup_message = self._load_message()
+        self.storage.save(self.quizzes)
 
     def print_menu(self):
         boundary = "=" * 50
@@ -30,6 +33,10 @@ class QuizGame:
         left = pad // 2
         header = " " * left + title + " " * (pad - left)
         print(boundary + '\n' + header + '\n' + boundary)
+        if self.startup_message:
+            print(self.startup_message)
+            print(boundary)
+            self.startup_message = None  # consumed --> hidden on every later render!
         print("1. 퀴즈 풀기")
         print("2. 퀴즈 추가")
         print("3. 퀴즈 목록")
@@ -59,6 +66,15 @@ class QuizGame:
         except (KeyboardInterrupt, EOFError):
             print("퀴즈를 종료합니다...")
             return
+
+    def _load_message(self):
+        match self.storage.source:
+            case "file":
+                return f"저장된 데이터를 불러왔습니다. (퀴즈 {len(self.quizzes)}개)"
+            case "new":
+                return "처음 실행입니다. 기본 문제로 시작합니다."
+            case "corrupt":
+                return "저장 파일이 손상되어 기본 문제로 시작합니다."
 
 
 if __name__ == "__main__":

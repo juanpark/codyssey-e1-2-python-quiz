@@ -8,6 +8,7 @@ from quiz import Quiz
 from storage import Storage
 
 BOUNDARY = "=" * 50  # one rule width for every screen, so menus stay consistent
+HINT_PENALTY = 10     # points subtracted per hint viewed during a round
 
 
 def display_width(text: str) -> int:
@@ -100,8 +101,13 @@ class QuizGame:
 
     @staticmethod
     def _record_pct(record):
-        """Percentage score of one history record. total defaults to 1 to avoid /0."""
-        return record.get("correct", 0) / record.get("total", 1) * 100
+        """Score % of one record: accuracy minus a penalty per hint used.
+
+        total defaults to 1 to avoid /0; hints defaults to 0 so older records
+        (saved before hints existed) carry no penalty. Floored at 0.
+        """
+        base = record.get("correct", 0) / record.get("total", 1) * 100
+        return max(0, base - record.get("hints", 0) * HINT_PENALTY)
 
     def best_run(self):
         """The history record with the highest percentage, or None if no games yet."""
@@ -125,28 +131,42 @@ class QuizGame:
         self._header(f"퀴즈 풀기 (총 {total}문제)")
 
         correct = 0
+        hints_used = 0
         for number, quiz in enumerate(selected, start=1):
             time.sleep(0.5)  # small pause so questions don't flash by
             print(f"\n[문제 {number}/{total}]")
             quiz.display()
-            answer = read_int_in_range("정답 입력: ", 1, 4)
+            if quiz.hint:
+                # bonus: 0 reveals the hint (costs points), then ask for the answer
+                answer = read_int_in_range("정답 입력 (0=힌트): ", 0, 4)
+                if answer == 0:
+                    print(f"힌트: {quiz.hint}  (-{HINT_PENALTY}점)")
+                    hints_used += 1
+                    answer = read_int_in_range("정답 입력: ", 1, 4)
+            else:
+                answer = read_int_in_range("정답 입력: ", 1, 4)
             if quiz.is_correct(answer):
                 print("정답입니다!")
                 correct += 1
             else:
                 print("오답입니다!")
 
-        score = correct / total * 100
-        self._header("결과")
-        print(f"{total}문제 중 {correct}문제 정답!  ({score:.1f}점)")
-
-        # record this game, then flag a new best (compared against the PRIOR best)
-        prior_best = self.best_run()
-        self.history.append({
+        record = {
             "datetime": datetime.now().strftime("%Y-%m-%d %H:%M"),
             "correct": correct,
             "total": total,
-        })
+            "hints": hints_used,
+        }
+        score = self._record_pct(record)  # accuracy minus hint penalty, floored at 0
+        self._header("결과")
+        detail = f"{total}문제 중 {correct}문제 정답!  ({score:.1f}점)"
+        if hints_used:
+            detail += f"  [힌트 {hints_used}회, -{hints_used * HINT_PENALTY}점]"
+        print(detail)
+
+        # record this game, then flag a new best (compared against the PRIOR best)
+        prior_best = self.best_run()
+        self.history.append(record)
         if prior_best is None or score > self._record_pct(prior_best):
             print("최고 점수 갱신!")
         self.storage.save(self.quizzes, self.history)

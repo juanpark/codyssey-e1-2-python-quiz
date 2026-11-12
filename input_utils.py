@@ -9,7 +9,7 @@ def read_int_in_range(prompt: str, low: int, high: int) -> int:
     EOFError/KeyboardInterrupt are not caught here -- they propagate.
     """
     while True:
-        raw = input(prompt).strip()
+        raw = input(prompt).strip() # 입력 앞뒤 공백 제거
 
         try:
             value = int(raw)

@@ -1,4 +1,5 @@
 """QuizGame: orchestrates the game — owns the quizzes and runs the menu loop."""
+import random
 import time
 import unicodedata  # stdlib tool
 from datetime import datetime
@@ -109,16 +110,22 @@ class QuizGame:
         return max(self.history, key=self._record_pct)
 
     def play(self):
-        """Ask every quiz, score the round, and record it in history."""
+        """Ask a chosen number of quizzes in random order, score, and record it."""
         if not self.quizzes:
             print("등록된 퀴즈가 없습니다. 먼저 '퀴즈 추가'로 문제를 만들어 주세요.")
             return
 
-        total = len(self.quizzes)
+        max_n = len(self.quizzes)
+        count = read_int_in_range(f"몇 문제를 풀까요? (1-{max_n}): ", 1, max_n)  # bonus: choose how many
+        selected = self.quizzes[:]       # copy so the stored order isn't disturbed
+        random.shuffle(selected)         # bonus: random order
+        selected = selected[:count]
+        total = count
+
         self._header(f"퀴즈 풀기 (총 {total}문제)")
 
         correct = 0
-        for number, quiz in enumerate(self.quizzes, start=1):
+        for number, quiz in enumerate(selected, start=1):
             time.sleep(0.5)  # small pause so questions don't flash by
             print(f"\n[문제 {number}/{total}]")
             quiz.display()

@@ -2,15 +2,19 @@
 .DS_Store
 .AppleDouble
 .LSOverride
-._*                 # AppleDouble resource forks (show up on external/iCloud drives)
+# AppleDouble resource forks (show up on external/iCloud drives)
+._*
 .Spotlight-V100
 .Trashes
 
 # ===== Python =====
-__pycache__/        # compiled bytecode cache dirs
-*.py[cod]           # .pyc / .pyo / .pyd
+# compiled bytecode cache dirs
+__pycache__/
+# .pyc / .pyo / .pyd
+*.py[cod]
 *$py.class
-.venv/              # virtual envs (not used here, but safe to ignore)
+# virtual envs (not used here, but safe to ignore)
+.venv/
 venv/
 env/
 .pytest_cache/
@@ -21,6 +25,7 @@ env/
 .idea/
 
 # ===== This mission =====
-state.json          # runtime data — regenerated from hardcoded defaults on first run.
-                    # Ignored so a fresh clone exercises the "missing file -> defaults" path.
-                    # (Remove this line if you'd rather commit a sample state.json instead.)
+state.json
+# runtime data — regenerated from hardcoded defaults on first run.
+# Ignored so a fresh clone exercises the "missing file -> defaults" path.
+# (Remove this line if you'd rather commit a sample state.json instead.)

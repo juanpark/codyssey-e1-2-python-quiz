@@ -1,7 +1,15 @@
+"""Built-in seed quizzes, used when state.json is missing or corrupt."""
+
 from quiz import Quiz
 
 
 def default_quizzes() -> list[Quiz]:
+    """Return a fresh list of the built-in Python quizzes.
+
+    A new list of new Quiz objects is built on every call, so resetting to
+    defaults never hands back a shared or mutated list. Called by the load
+    path when there is no valid saved file (missing or corrupt state.json).
+    """
     return [
         Quiz(
             "참(True)과 거짓(False) 두 값만 가지는 파이썬 자료형은?",

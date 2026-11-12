@@ -26,6 +26,8 @@ env/
 
 # ===== This mission =====
 state.json
+state.json.bak
+state.json.tmp
 # runtime data — regenerated from hardcoded defaults on first run.
 # Ignored so a fresh clone exercises the "missing file -> defaults" path.
 # (Remove this line if you'd rather commit a sample state.json instead.)

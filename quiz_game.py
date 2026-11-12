@@ -97,7 +97,9 @@ class QuizGame:
             case "new":
                 return "처음 실행입니다. 기본 문제로 시작합니다."
             case "corrupt":
-                return "저장 파일이 손상되어 기본 문제로 시작합니다."
+                return "저장 파일이 손상되어 기본 문제로 시작합니다. (원본은 .bak으로 백업)"
+            case "denied":
+                return "저장 파일을 읽을 권한이 없어 기본 문제로 시작합니다."
 
     @staticmethod
     def _record_pct(record):

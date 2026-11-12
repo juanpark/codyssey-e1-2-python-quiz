@@ -2,7 +2,8 @@
 import time
 import unicodedata  # stdlib tool
 from datetime import datetime
-from input_utils import read_int_in_range
+from input_utils import read_int_in_range, read_nonempty
+from quiz import Quiz
 from storage import Storage
 
 
@@ -58,7 +59,7 @@ class QuizGame:
                     case 1:
                         self.play()
                     case 2:
-                        print("todo")
+                        self.add_quiz()
                     case 3:
                         self.list_quizzes()
                     case 4:
@@ -161,6 +162,19 @@ class QuizGame:
         for number, quiz in enumerate(self.quizzes, start=1):
             print(f"[{number}] {quiz.question}")
         print("=" * 50)
+
+    def add_quiz(self):
+        """Create a new Quiz from user input, append it, and save."""
+        print("\n새 퀴즈를 추가합니다.")
+        print("=" * 50)
+        question = read_nonempty("질문: ")
+        choices = [read_nonempty(f"보기 {i}: ") for i in range(1, 5)]
+        answer = read_int_in_range("정답 번호 (1-4): ", 1, 4)
+        hint = input("힌트 (선택, Enter로 건너뛰기): ").strip() or None
+        self.quizzes.append(Quiz(question, choices, answer, hint))
+        self.storage.save(self.quizzes, self.history)
+        print("=" * 50)
+        print(f"추가 완료! (현재 퀴즈 {len(self.quizzes)}개)")
 
 
 if __name__ == "__main__":

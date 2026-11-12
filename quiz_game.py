@@ -1,4 +1,5 @@
 """QuizGame: orchestrates the game — owns the quizzes and runs the menu loop."""
+import time
 import unicodedata  # stdlib tool
 from input_utils import read_int_in_range
 from storage import Storage
@@ -15,8 +16,9 @@ class QuizGame:
     def __init__(self):
         self.storage = Storage()
         self.quizzes = self.storage.load()
+        self.best_score = self.storage.best_score
         self.startup_message = self._load_message()
-        self.storage.save(self.quizzes)
+        self.storage.save(self.quizzes, self.best_score)
 
     def print_menu(self):
         boundary = "=" * 50
@@ -53,13 +55,13 @@ class QuizGame:
                 menu = read_int_in_range("선택: ", 1, 5)
                 match menu:
                     case 1:
-                        print("todo")
+                        self.play()
                     case 2:
                         print("todo")
                     case 3:
                         print("todo")
                     case 4:
-                        print("todo")
+                        self.show_score()
                     case 5:
                         print("퀴즈를 종료합니다...")
                         break
@@ -70,12 +72,53 @@ class QuizGame:
     def _load_message(self):
         match self.storage.source:
             case "file":
-                return f"저장된 데이터를 불러왔습니다. (퀴즈 {len(self.quizzes)}개)"
+                return f"저장된 데이터를 불러왔습니다. (퀴즈 {len(self.quizzes)}개, 최고점수 {self.best_score:.1f}점)"
             case "new":
                 return "처음 실행입니다. 기본 문제로 시작합니다."
             case "corrupt":
                 return "저장 파일이 손상되어 기본 문제로 시작합니다."
 
+    def show_score(self):
+        """Print the saved best score."""
+        print(f"최고 점수: {self.best_score:.1f}점")
+
+    def play(self):
+        if not self.quizzes:
+            print("등록된 퀴즈가 없습니다. 먼저 '퀴즈 추가'로 문제를 만들어 주세요.")
+            return
+
+        total = len(self.quizzes)
+
+        print(f"\n퀴즈를 시작합니다! (총 {total}문제)\n")
+        print("=" * 50)
+
+        correct = 0
+        for number, quiz in enumerate(self.quizzes, start=1):
+            time.sleep(0.5)
+            print(f"[문제 {number}]")
+            quiz.display()
+            print()
+            answer = read_int_in_range("정답 입력: ", 1, 4)
+            if quiz.is_correct(answer):
+                print("정답입니다!")
+                print()
+                correct += 1
+            else:
+                print("오답입니다!")
+                print()
+            print("=" * 50)
+
+        score = correct / total * 100
+        print("=" * 50)
+        print(f"결과: {total}문제 중 {correct}문제 정답! ({score:.1f}점)")
+        if score > self.best_score:
+            self.best_score = score
+            print("🎉 최고 점수 갱신!")
+        print("=" * 50)
+        self.storage.save(self.quizzes, self.best_score)
+
+    def show_score(self):
+        print(f"최고 점수: {self.best_score:.1f}점")
 
 if __name__ == "__main__":
     QuizGame().run()

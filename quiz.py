@@ -23,6 +23,7 @@ class Quiz:
     def display(self):
         """Print the question, then the 4 choices numbered 1-4."""
         print(self.question)
+        print()
         for index, choice in enumerate(self.choices, start=1):
             print(f"{index}. {choice}")
 

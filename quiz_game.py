@@ -54,7 +54,8 @@ class QuizGame:
         print("2. 퀴즈 추가")
         print("3. 퀴즈 목록")
         print("4. 점수 확인")
-        print("5. 퀴즈 종료")
+        print("5. 퀴즈 삭제")
+        print("6. 퀴즈 종료")
         print(BOUNDARY)
 
     def run(self):
@@ -63,8 +64,8 @@ class QuizGame:
         try:
             while True:
                 self.print_menu()
-                choice = read_int_in_range("선택: ", 1, 5)
-                if choice == 5:
+                choice = read_int_in_range("선택: ", 1, 6)
+                if choice == 6:
                     print("퀴즈를 종료합니다...")
                     break
                 match choice:
@@ -76,6 +77,8 @@ class QuizGame:
                         self.list_quizzes()
                     case 4:
                         self.show_score()
+                    case 5:
+                        self.delete_quiz()
                 input("\n계속하려면 Enter를 누르세요...")  # pause so output is readable
                 self._clear()                              # then redraw the menu at the top
         except (KeyboardInterrupt, EOFError):
@@ -151,6 +154,23 @@ class QuizGame:
         self.quizzes.append(Quiz(question, choices, answer, hint))
         self.storage.save(self.quizzes, self.history)
         print(f"\n추가 완료!  (현재 퀴즈 {len(self.quizzes)}개)")
+
+    def delete_quiz(self):
+        """List quizzes and delete the one the user picks (0 cancels)."""
+        if not self.quizzes:
+            print("삭제할 퀴즈가 없습니다.")
+            return
+        self._header(f"퀴즈 삭제 (총 {len(self.quizzes)}개)")
+        for number, quiz in enumerate(self.quizzes, start=1):
+            print(f"[{number}] {quiz.question}")
+        print(BOUNDARY)
+        index = read_int_in_range("삭제할 번호 (0=취소): ", 0, len(self.quizzes))
+        if index == 0:
+            print("취소했습니다.")
+            return
+        removed = self.quizzes.pop(index - 1)
+        self.storage.save(self.quizzes, self.history)
+        print(f"\n삭제 완료: {removed.question}")
 
     def list_quizzes(self):
         """Show every registered quiz question."""

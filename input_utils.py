@@ -22,5 +22,19 @@ def read_int_in_range(prompt: str, low: int, high: int) -> int:
         return value
 
 
+def read_nonempty(prompt: str) -> str:
+    """Read a non-empty line from the console, stripped of surrounding space.
+
+    Re-prompt until the user types something that isn't blank.
+    EOFError/KeyboardInterrupt are not caught here -- they propagate.
+    """
+    while True:
+        text = input(prompt).strip()
+        if text:
+            return text
+        print("빈 값은 입력할 수 없습니다.")
+
+
 if __name__ == "__main__":
     print(read_int_in_range("Question? ", 1, 4))
+    print(read_nonempty("Name? "))

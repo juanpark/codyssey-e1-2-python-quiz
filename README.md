@@ -47,6 +47,13 @@ python main.py
 - 데이터는 프로젝트 루트의 **`state.json`** (UTF-8)에 저장됩니다.
 - 처음 실행하거나 새로 `clone` 한 직후에는 `state.json`이 없으므로 **기본 문제 5개**로 시작합니다.
 
+> **참고 — Python 버전:** 시스템 기본 `python3`가 3.9 이하이면 `match`/`case`에서 오류가 납니다. 3.10 이상(예: 프로젝트 `.venv`)으로 실행하세요.
+
+### 개발 환경
+
+<img src="docs/screenshots/dev-env.png" width="440" alt="개발 환경">
+<img src="docs/screenshots/dev-env-project-structure.png" width="440" alt="프로젝트 구조">
+
 ---
 
 ## 4. 기능 목록
@@ -63,6 +70,28 @@ python main.py
 **보너스 (모두 구현):** 랜덤 출제 · 문제 수 선택 · 힌트(점수 −10점) · 퀴즈 삭제 · 점수 히스토리.
 
 **공통 입력/예외 처리:** 숫자가 아닌 입력·범위 밖·빈 입력은 메시지와 함께 다시 묻고, `Ctrl+C`/`EOF`는 traceback 없이 우아하게 종료합니다. 각 메뉴 작업 후에는 **Enter로 잠시 멈춘 뒤** 화면을 지우고 메뉴를 위에서 다시 그립니다.
+
+### 실행 화면
+
+**① 메인 메뉴** — 시작 시 저장 데이터를 불러오고(배너), 제목은 한글 폭을 계산해 정확히 가운데 정렬(§7.10).
+
+<img src="docs/screenshots/run-1-menu.png" width="460" alt="메인 메뉴">
+
+**② 퀴즈 풀기** — 문제 수 선택(보너스)·랜덤 출제(보너스)·힌트(`0=힌트`, 보너스)가 한 화면에 보입니다.
+
+<img src="docs/screenshots/run-2-play.png" width="460" alt="퀴즈 풀기">
+
+**③ 채점 결과** — 정답 수 → 백분율 점수, 이전 최고점과 비교해 `최고 점수 갱신!` 표시.
+
+<img src="docs/screenshots/run-3-result.png" width="460" alt="채점 결과">
+
+**④ 퀴즈 추가** — 질문·보기 4개·정답·힌트를 입력하면 즉시 저장(현재 퀴즈 수 갱신).
+
+<img src="docs/screenshots/run-4-add.png" width="460" alt="퀴즈 추가">
+
+**⑤ 점수 확인** — 최고 점수와 날짜별 최근 기록(보너스). 재시작 후에도 유지됩니다.
+
+<img src="docs/screenshots/run-5-score.png" width="460" alt="점수 확인">
 
 ---
 
@@ -283,6 +312,10 @@ def _record_pct(record):            # 정확도 − 힌트 감점, 0점 하한
 - 브랜치 생성 + 병합 (feature 단위: quizgame · persistence · play · list · add · ux · delete · play-options · history · hints).
 - 병합은 **`--no-ff`** 로 — fast-forward면 직선으로 합쳐져 브랜치 흔적이 사라지므로, 머지 커밋을 강제해 `git log --graph`에 **분기·병합 경로가 보이게** 합니다.
 - `clone` + `pull` 실습: 2번째 폴더로 clone → README 한 줄 수정 → push → 원본에서 pull (완료). 이로써 7개 명령(init·add·commit·push·pull·checkout·clone)을 모두 사용.
+
+**커밋 그래프** (`git log --oneline --graph --all`) — 기능마다 브랜치를 떼어 `--no-ff`로 병합한 분기·병합 경로가 그대로 보존됩니다.
+
+<img src="docs/screenshots/git-graph.png" width="520" alt="Git 커밋 그래프">
 
 ---
 

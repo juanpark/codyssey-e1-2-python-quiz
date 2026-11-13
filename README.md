@@ -168,6 +168,21 @@ python main.py
 - **손상 복구:** 로드 중 손상이 감지되면 원본을 **`state.json.bak`으로 백업**한 뒤 기본값으로 시작합니다. `.bak`을 열어 내용을 확인/수정한 뒤 `state.json`으로 되돌리면 수동 복구가 됩니다.
 - **권한 오류:** 읽기 권한이 없으면(`PermissionError`) 기본값으로 시작하고, 쓰기 권한이 없으면 경고만 출력하고 이번 세션은 메모리로 계속 진행합니다(크래시 없음).
 
+**재시작 후에도 유지됨 — 실제 증빙:** §4 실행 화면에서 퀴즈 1개를 추가하고(→ 6개) 2문제를 풀어 100점을 기록했습니다. 종료 후 디스크의 `state.json`을 직접 읽어 보면 그 변경이 그대로 저장되어 있습니다. 다음 실행 때 이 파일을 읽어 배너가 `(퀴즈 6개, 최고점수 100점)`으로 뜹니다:
+
+```text
+$ python -c "import json; d=json.load(open('state.json')); \
+  print('퀴즈', len(d['quizzes']), '개'); \
+  print('마지막 추가:', d['quizzes'][-1]['question']); \
+  print('history:', d['history']); print('best_score:', d['best_score'])"
+퀴즈 6 개
+마지막 추가: 파이썬에서 리스트를 정렬해 새 리스트로 돌려주는 내장 함수는?
+history: [{'datetime': '2026-11-13 09:51', 'correct': 2, 'total': 2, 'hints': 0}]
+best_score: 100.0
+```
+
+추가한 퀴즈와 플레이 기록이 파일에 남아 있으므로, 프로그램을 다시 실행하면 그대로 복원됩니다.
+
 ---
 
 ## 7. 구현 노트 — 어렵거나 흥미로웠던 부분
@@ -304,6 +319,28 @@ def _record_pct(record):            # 정확도 − 힌트 감점, 0점 하한
 
 미션 규모에선 과설계를 피해 리스트를 유지합니다. 다만 디스크 접근이 **`Storage` 한 곳에만 격리**돼 있어, 나중에 저장 방식을 바꿔도 게임 로직은 건드리지 않습니다.
 
+### 7.14 화면 지우기 — ANSI 이스케이프 코드
+
+메뉴를 매번 화면 맨 위에서 깔끔하게 다시 그리기 위해 `_clear()`에서 이 한 줄을 씁니다:
+
+```python
+print("\033[H\033[J", end="")
+```
+
+이건 함수 호출이 아니라, **터미널에 보내는 두 개의 명령(ANSI 이스케이프 코드)** 입니다. 글자처럼 보이지만 터미널은 이걸 "출력할 텍스트"가 아니라 "명령"으로 해석합니다.
+
+| 조각 | 의미 |
+|---|---|
+| `\033` | **ESC** 문자 (8진수 `033` = 10진수 27 = `\x1b`). "지금부터 명령이다"라고 터미널에 알리는 신호. |
+| `\033[` | ESC + `[` = **CSI**(Control Sequence Introducer). 뒤에 오는 글자까지가 하나의 명령. |
+| `\033[H` | `H` = 커서를 **맨 위 왼쪽**(1행 1열)으로 이동(Home). |
+| `\033[J` | `J` = 커서 위치부터 **화면 끝까지 지움**(Erase in Display). |
+
+즉 **"맨 위로 이동한 뒤, 거기서부터 아래를 전부 지운다"** — 결과적으로 화면이 비워지고 커서가 맨 위에 놓여, 다음 `print_menu()`가 1행부터 그려집니다. `end=""`는 `print`가 기본으로 붙이는 줄바꿈(`\n`)을 없애, 이스케이프 코드 외에 **아무것도(빈 줄조차) 출력하지 않기** 위함입니다.
+
+- **왜 '지워지나':** 마법이 아니라 터미널이 지키는 **약속**입니다. macOS Terminal·iTerm·VS Code 터미널·리눅스 모두 ANSI 코드를 이해합니다. 만약 출력을 파일로 리다이렉트(`python main.py > out.txt`)하면 지워지지 않고 `^[[H^[[J` 원시 바이트가 파일에 들어갑니다 — 실제 터미널이 해석할 때만 '지우기'가 됩니다.
+- **대안:** `os.system("clear")`(윈도우는 `"cls"`)는 매번 **별도 프로세스를 띄우고 OS마다 다릅니다**. 이스케이프 코드 방식은 더 빠르고 `import`도 필요 없습니다. 흔한 형제 형태는 `\033[2J\033[H`(`2J`=커서 위치와 무관하게 화면 전체 지우기 → Home); 여기서 쓴 `\033[H\033[J`도 같은 결과를 냅니다.
+
 ---
 
 ## 8. Git 워크플로우
@@ -313,9 +350,106 @@ def _record_pct(record):            # 정확도 − 힌트 감점, 0점 하한
 - 병합은 **`--no-ff`** 로 — fast-forward면 직선으로 합쳐져 브랜치 흔적이 사라지므로, 머지 커밋을 강제해 `git log --graph`에 **분기·병합 경로가 보이게** 합니다.
 - `clone` + `pull` 실습: 2번째 폴더로 clone → README 한 줄 수정 → push → 원본에서 pull (완료). 이로써 7개 명령(init·add·commit·push·pull·checkout·clone)을 모두 사용.
 
+**원격 저장소:** <https://github.com/juanpark/codyssey-e1-2-python-quiz> — 전체 **커밋 45개**(의미 단위, `Feat:`/`Fix:`/`Docs:`/`Chore:` 접두사), **머지 커밋 12개**.
+
 **커밋 그래프** (`git log --oneline --graph --all`) — 기능마다 브랜치를 떼어 `--no-ff`로 병합한 분기·병합 경로가 그대로 보존됩니다.
 
 <img src="docs/screenshots/git-graph.png" width="520" alt="Git 커밋 그래프">
+
+같은 그래프의 **실제 텍스트 출력**(이미지를 열 수 없는 환경에서도 분기·병합과 커밋 메시지를 그대로 확인할 수 있도록 첨부):
+
+```text
+* 8efbe84 Docs: add run screenshots, dev-env, and git graph to README
+* e7a206e Docs: explain the 3-vs-5 class decision in 파일 구조
+*   eddd58e Merge branch 'feature/best-score-field'
+|\
+| * 3c16f87 Docs: explain best_score as a write-only derived mirror
+| * 236af62 Feat: write derived best_score field for schema compatibility
+|/
+* e1b4449 Docs: use official mission objectives (guide S3) in learning section
+* 0a4f50e Docs: add learning-objectives reflection section
+*   addf54e Merge branch 'feature/robustness'
+|\
+| * c574080 Docs: add recovery/safety and scalability notes
+| * 9ce9dc1 Feat: atomic save, PermissionError handling, corrupt-file backup (.bak)
+|/
+* 6090f99 Docs: tidy README footer; mark clone/pull done
+* 17e1907 Docs: add a line from the clone (pull practice)
+* b3bbfeb Docs: finalize README (features, history schema, implementation notes)
+*   36f0a6c Merge branch 'feature/hints'
+|\
+| * 99c125d Feat: play bonus - hints with score penalty
+|/
+*   739aba0 Merge branch 'feature/play-options'
+|\
+| * 8c1d18f Feat: play bonus - random order and choose question count
+|/
+*   6948935 Merge branch 'feature/delete'
+|\
+| * b7831de Feat: add quiz delete (menu 5)
+|/
+*   bafc167 Merge branch 'feature/ux'
+|\
+| * 048b754 Feat: unify screen formatting; pause-and-clear between menus
+|/
+*   eab0ef1 Merge branch 'feature/add'
+|\
+| * a712d0f Feat: add quiz creation (menu 2)
+| * 5a86582 Feat: add read_nonempty input helper
+|/
+*   6ef420e Merge branch 'feature/history'
+|\
+| * c0c740c Feat: add score history (date, questions, score); derive best from it
+|/
+*   05fd345 Merge branch 'feature/list'
+|\
+| * e1415af Feat: add quiz list view
+|/
+*   66a2ae6 Merge branch 'feature/play'
+|\
+| * 60b1ce0 Feat: add quiz play loop and score display
+| * 6ed25b8 Feat: persist best_score in state.json
+|/
+*   0e08ab9 Merge branch 'feature/persistence'
+|\
+| * cf43e1a Docs: add README with required sections and implementation notes
+| * 63f7e02 Feat: load/save via Storage with one-shot startup banner
+| * 37612cb Feat: add Storage layer for state.json persistence
+|/
+* 2219004 Feat: add to_dict/from_dict serialization to Quiz
+*   e5818eb Merge branch 'feature/quizgame'
+|\
+| * 3a9b35d Feat: add QuizGame menu loop and entry point
+* | 35654d8 Docs: note strip() purpose in read_int_in_range
+* | 9bb6bf1 Fix: correct .gitignore patterns broken by inline comments
+|/
+* b1b6604 Feat: add read_int_in_range input helper
+* 371ebe4 Docs: add docstrings
+* e40a68a Feat: add default Python quiz data
+* 042916a Feat: Quiz class impl
+* 72e9efe Chore: 저장소 초기 설정
+```
+
+**`clone` + `pull` 실습 — 실제 터미널 출력:**
+
+```text
+$ git clone https://github.com/juanpark/codyssey-e1-2-python-quiz.git
+Cloning into 'codyssey-e1-2-python-quiz'...
+remote: Enumerating objects: 134, done.
+remote: Counting objects: 100% (134/134), done.
+remote: Compressing objects: 100% (87/87), done.
+remote: Total 134 (delta 75), reused 103 (delta 44), pack-reused 0
+Receiving objects: 100% (134/134), 4.20 MiB | 3.90 MiB/s, done.
+Resolving deltas: 100% (75/75), done.
+
+$ cd codyssey-e1-2-python-quiz && git log --oneline | wc -l
+45
+
+$ git pull
+Already up to date.
+```
+
+> 최초 실습 흔적은 히스토리에도 남아 있습니다: 2번째 폴더로 clone → README 한 줄 수정 → push → 원본에서 pull — 그 pull이 가져온 커밋이 `17e1907 Docs: add a line from the clone (pull practice)` 입니다.
 
 ---
 
